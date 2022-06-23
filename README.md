@@ -84,3 +84,7 @@ iir_filter.set_raw_mode(True)
 ```python
 raw_samples = iir_filter.filter(raw_samples)
 ```
+
+Acknowledgement
+---------------
+This project is inspired by [py-iir-filter](https://github.com/berndporr/py-iir-filter) repository of [@berndporr](https://github.com/berndporr)
