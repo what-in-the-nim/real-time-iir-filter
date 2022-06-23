@@ -1,17 +1,18 @@
 from dataclasses import dataclass, field
-import numpy as np
 from scipy import signal
-from typing import Union,Sequence
+from typing import Union
+import numpy as np
 
 
 @dataclass
 class IIR:
     """
-    IIR multi-channel
+    IIR multi-channel filter
     """
     num_channel: int
     sampling_frequency: int
 
+    enabled: bool = field(default=True, repr=False)
     filter_dict: dict[str,dict] = field(init=False, default_factory=dict)
     coeffs : list[tuple] = field(init=False,repr=False, default_factory=list)
     past_zi: list[np.ndarray] = field(init=False, repr=False)
@@ -23,12 +24,12 @@ class IIR:
     def total_filter(self) -> int:
         return len(self.coeffs)
 
-    def _init_zi(self, signals: Sequence[Sequence[Union[int,float]]]) -> None:
+    def _init_zi(self, signals: Union[list,np.ndarray]) -> None:
         """
         Initialize initial condition for first sample to reduce transient-state time of signals
 
         :param signals: Two dimensional matrix of [samples x channels]
-        :type signals: Nested Sequence of int or float
+        :type signals: List or numpy array
         """
         self.past_zi = list()
         first_sample = signals[...,0]
@@ -59,6 +60,9 @@ class IIR:
         filter_name = f'filter_{self.total_filter}'
         self.filter_dict[filter_name] = filter_details
 
+    def set_enabled(self,state: bool) -> None:
+        self.enabled = state
+
     def add_filter(self, order: int, frequency_range: tuple, filter_type: str) -> None:
         """
         Add filter into cascading pipeline
@@ -75,18 +79,21 @@ class IIR:
         self._add_filter_dict(order,frequency_range,filter_type)
 
 
-    def filter(self, raw_signal: Sequence[Sequence[Union[int,float]]]) -> np.ndarray:
+    def filter(self, raw_signal: Union[list,np.ndarray]) -> np.ndarray:
         """
         Filter a sequence of multi-channel samples
 
         :param raw_signal: Two dimensional matrix of [samples x channels]
-        :type raw_signal: Nested Sequence of int or float
+        :type raw_signal: List or numpy array
         :return np.ndarray
         """
         if isinstance(raw_signal,list):
             filt_signal = np.array(list(zip(*raw_signal)))
         elif isinstance(raw_signal,np.ndarray):
             filt_signal = raw_signal.T
+
+        if not self.enabled:
+            return filt_signal.T
 
         if self.past_zi is None:
             self._init_zi(filt_signal)
