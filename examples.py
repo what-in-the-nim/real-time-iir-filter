@@ -12,8 +12,8 @@ iir_filter = IIR(
     num_channel = num_channel,
     sampling_frequency= fs
 )
-iir_filter.add_filter(8, (45,55),'bandstop')
-iir_filter.add_filter(8, (2,40),'bandpass')
+iir_filter.add_filter(6, (45,55),'bandstop')
+iir_filter.add_filter(2, 30,'lowpass')
 
 print('Object Representation')
 print(iir_filter)
@@ -23,7 +23,7 @@ signal_band = [
     (50,20),
     (80,5)
 ]
-bias = 50 * np.arange(num_channel) + 500
+bias = 50 * np.arange(num_channel)
 
 times = np.arange(length)/fs
 labels = [f'CH{num+1}' for num in range(num_channel)]
