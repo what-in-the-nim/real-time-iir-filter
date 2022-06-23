@@ -37,7 +37,7 @@ iir_filter.add_filter(
     cutoff=(45,55),
     filter_type='bandstop'
 )
-# Add 2th order butterworth highpass filter with cutoff at 2Hz
+# Add 2th order butterworth highpass filter with cutoff at 30Hz
 iir_filter.add_filter(
     order=2, 
     cutoff=30,
