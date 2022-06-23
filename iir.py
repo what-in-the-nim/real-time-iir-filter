@@ -4,7 +4,7 @@ from typing import Union, Sequence
 import numpy as np
 
 class DimensionError(Exception):
-    """Raise when the dimension of signals not equals to two"""
+    """Raise when the dimension of signals not as expected"""
     pass
 
 
