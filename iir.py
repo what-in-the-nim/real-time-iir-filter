@@ -16,7 +16,7 @@ class IIR:
     num_channel: int
     sampling_frequency: int
 
-    raw_enabled: bool = field(default=True, repr=False)
+    raw_enabled: bool = field(repr=False, default=False)
     coeffs: list[tuple] = field(init=False, repr=False, default_factory=list)
     past_zi: list[np.ndarray] = field(init=False, repr=False, default=None)
 
