@@ -3,6 +3,7 @@ from scipy import signal
 from typing import Union, Sequence
 import numpy as np
 
+
 class DimensionError(Exception):
     """Raise when the dimension of signals not as expected"""
     pass
@@ -74,22 +75,23 @@ class IIR:
         :type raw_signal: Union[list, np.ndarray]
         :return np.ndarray
         """
-        #Check if input is list or numpy array
+        # Check if input is list or numpy array
         if isinstance(raw_signal, list):
             filt_signal = np.array(list(zip(*raw_signal)))
         elif isinstance(raw_signal, np.ndarray):
             filt_signal = raw_signal.T
 
-        #If raw_mode then return
+        # If raw_mode then return
         if self.raw_enabled:
             return filt_signal.T
 
-        #Check input correctness
+        # Check input correctness
         signal_dim = filt_signal.shape
         if len(signal_dim) != 2:
             raise DimensionError(f'Input signal dimension must be equal to 2')
         if signal_dim[0] != self.num_channel:
-            raise DimensionError(f'Number of channels must be equal to {self.num_channel}')
+            raise DimensionError(
+                f'Number of channels must be equal to {self.num_channel}')
 
         if self.past_zi is None:
             self._init_zi(filt_signal)
