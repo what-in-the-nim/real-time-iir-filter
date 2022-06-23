@@ -1,70 +1,86 @@
 Real-time multi-channel filter in Python
 =============================
 
-Real-time filter uses the numpy sosfilt implementation to achieve the fast computational speed and high stability. The filter is capable of sample by sample multi-channel filtering.
+Real-time filter uses the scipy `sosfilt` implementation to achieve the fast computational speed and high stability. The filter is capable of sample by sample multi-channel filtering and able to switch between raw mode and filter mode interchangably.
 
 
 Import
-======
+------
 
-For IIR filter use the following import:
+import IIR filter use the following import:
 
 ```python
 from iir import IIR
 ```
 
-For FIR filter use the following import:
-
-```python
-from fir import FIR
-```
-
 Create an instance
-==================
+------------------
 
-The constructor takes the num_channels and sampling_frequency as an input argument:
+The constructor takes the `num_channels` and `sampling_frequency` as an input parameters:
 
 ```python
 iir_filter = IIR(
     num_channels=4,
-    sampling_frequency=256
+    sampling_frequency=256 #Hz
 )
 ```
 
-The constructor may takes no argument, but needs to be setup before using.
+Building pipeline
+-----------------
+
+Filter can be cascading by using the `add_filter` method. By default, the method use the butterworth filter which uses the same parameter as scipy `butter` method:
 
 ```python
-iir_filter = IIR()
-iir_filter.set_num_channels(4)
-iir_filter.set_sampling_frequency(256)
-```
-
-Building filter
-===============
-
-Filter can be cascading by using the add_filter method:
-
-```python
+# Add 6th order butterworth bandstop filter with cutoff at 45-55Hz
 iir_filter.add_filter(
-    N=6, 
-    Wn=(45,55),
-    btypes='bandstop'
+    order=6, 
+    cutoff=(45,55),
+    filter_type='bandstop'
+)
+# Add 2th order butterworth highpass filter with cutoff at 2Hz
+iir_filter.add_filter(
+    order=2, 
+    cutoff=30,
+    filter_type='lowpass'
 )
 ```
 
-Filtering
-=========
-The samples matrix is Samples x Channels.
+For other types of filter, using scipy `iirfilter` method to create sos coefficient array and add to the IIR filter using `add_sos` method.
+
 ```python
-samples: list[list[int|float]] = [
-    [ch_1[0],ch_2[0],ch_3[0],ch_4[0]],
-    [ch_1[1],ch_2[1],ch_3[1],ch_4[1]],
-    [ch_1[2],ch_2[2],ch_3[2],ch_4[2]],
-    [ch_1[3],ch_2[3],ch_3[3],ch_4[3]],
+# Build your own filter
+sos_coefficient = scipy.signal.iirfilter(N=17, Wn=[50, 200], 
+    rs=60, btype='band', analog=False, ftype='cheby2', fs=2000,
+    output='sos')
+
+iir_filter.add_sos(
+    sos=sos_coefficient, 
+)
+```
+Filtering
+---------
+The samples matrix is [samples x channels].
+```python
+raw_samples = [
+    [CH1[0],CH2[0]],
+    [CH1[1],CH2[1]],
+    [CH1[2],CH2[2]],
+    [CH1[3],CH2[3]],
     ...
 ]
 ```
 We can throw our raw signals directly into filter method.
 ```python
-sample = iir_filter.filter(samples)
+filt_samples = iir_filter.filter(raw_samples)
+```
+
+Raw mode
+---------
+Using `set_raw_mode` to bypass signal from filter.
+```python
+iir_filter.set_raw_mode(True)
+```
+ This is useful when you want to observe the raw signal. Without removing all codes
+```python
+raw_samples = iir_filter.filter(raw_samples)
 ```
