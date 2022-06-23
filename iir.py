@@ -44,6 +44,7 @@ class IIR:
 
     def set_raw_enabled(self, state: bool) -> None:
         self.raw_enabled = state
+        self.past_zi = None
 
     def add_filter(self, order: int, cutoff: Union[Sequence, int, float], filter_type: str) -> None:
         """
