@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from scipy import signal
-from typing import Union
+from typing import Union, Sequence
 import numpy as np
 
 
@@ -12,7 +12,7 @@ class IIR:
     num_channel: int
     sampling_frequency: int
 
-    enabled: bool = field(default=True, repr=False)
+    raw_enabled: bool = field(default=True, repr=False)
     filter_dict: dict[str,dict] = field(init=False, default_factory=dict)
     coeffs : list[tuple] = field(init=False,repr=False, default_factory=list)
     past_zi: list[np.ndarray] = field(init=False, repr=False)
@@ -44,39 +44,48 @@ class IIR:
             initial_zi *= first_sample
             self.past_zi.append(initial_zi)
 
-    def _add_filter_dict(self, order: int, frequency_range: tuple, filter_type: str) -> None:
+    def _add_filter_dict(self, order: int, cutoff: Union[Sequence,int,float], filter_type: str) -> None:
         """
         Add filter details into filter dict
 
         :param int order: An order of filter.
-        :param tuple frequency_range: A critical frequency of the filter.
+        :param Sequence|int|float cutoff: A critical frequency of the filter.
         :param str filter_type: Filter type can be 'lowpass', 'highpass', 'bandstop' and 'bandpass'.
         """
         filter_details = {
             'type'  : filter_type,
             'order' : order,
-            'range' : frequency_range
+            'cutoff' : cutoff
         }
         filter_name = f'filter_{self.total_filter}'
         self.filter_dict[filter_name] = filter_details
 
-    def set_enabled(self,state: bool) -> None:
-        self.enabled = state
+    def set_raw_enabled(self,state: bool) -> None:
+        self.raw_enabled = state
 
-    def add_filter(self, order: int, frequency_range: tuple, filter_type: str) -> None:
+    def add_filter(self, order: int, cutoff: Union[Sequence,int,float], filter_type: str) -> None:
         """
         Add filter into cascading pipeline
 
         :param int order: An order of filter.
-        :param tuple frequency_range: A critical frequency of the filter.
+        :param Sequence|int|float cutoff: A critical frequency of the filter.
         :param str filter_type: Filter type can be 'lowpass', 'highpass', 'bandstop' and 'bandpass'.
         """
 
         new_filter_coeff = signal.butter(
-            order, frequency_range, filter_type, output='sos', fs=self.sampling_frequency)
+            order, cutoff, filter_type, output='sos', fs=self.sampling_frequency)
   
         self.coeffs.append(new_filter_coeff)
-        self._add_filter_dict(order,frequency_range,filter_type)
+        self._add_filter_dict(order,cutoff,filter_type)
+
+    def add_sos(self,sos: np.ndarray) -> None:
+        """
+        Add sos filter into cascading pipeline
+
+        :param ndarray sos: A filter coefficient.
+        """
+        self.coeffs.append(sos)
+        #TODO add filter details
 
 
     def filter(self, raw_signal: Union[list,np.ndarray]) -> np.ndarray:
@@ -92,7 +101,7 @@ class IIR:
         elif isinstance(raw_signal,np.ndarray):
             filt_signal = raw_signal.T
 
-        if not self.enabled:
+        if not self.raw_enabled:
             return filt_signal.T
 
         if self.past_zi is None:
